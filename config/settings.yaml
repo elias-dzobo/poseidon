@@ -1,0 +1,67 @@
+project:
+  name: poseidon
+  description: Flood detection system for Ghana using Sentinel-1/2 satellite data
+  version: 0.1.0
+
+region:
+  country: Ghana
+  city: Accra
+  # Bounding box [min_lat, min_lon, max_lat, max_lon]
+  aoi_bbox: [5.52, -0.27, 5.70, -0.10]
+  epsg: 32630  # UTM Zone 30N
+
+sentinel1:
+  platform: Sentinel-1
+  product_type: GRD
+  instrument_mode: IW
+  polarisation: VV VH
+  resolution: 10  # metres
+
+sentinel2:
+  platform: Sentinel-2
+  product_type: S2MSI2A
+  cloud_cover_max: 20  # percent
+  bands: [B03, B08, B11, B12]  # Green, NIR, SWIR1, SWIR2 for NDWI/MNDWI
+
+dem:
+  source: SRTM
+  resolution: 30  # metres
+
+jrc_water:
+  year: 2021
+  layer: seasonality  # permanent water baseline
+
+preprocessing:
+  sar:
+    speckle_filter: lee
+    filter_size: 7
+    terrain_correction: true
+  optical:
+    cloud_mask_method: s2cloudless
+    ndwi_threshold: 0.3
+    mndwi_threshold: 0.2
+  features:
+    hand_threshold: 5.0   # metres above nearest drainage
+    slope_threshold: 5.0  # degrees — slopes above this rarely flood
+
+flood_detection:
+  # Change detection thresholds (Stage 1 fallback)
+  sar_change_threshold: -2.5  # dB drop indicating inundation
+  # Post-processing
+  min_flood_patch_area_m2: 1000
+  morphological_closing_radius: 3
+
+output:
+  geotiff_crs: EPSG:32630
+  geojson_crs: EPSG:4326
+  report_format: [json, pdf]
+  alert_on_severity: [high, critical]
+
+paths:
+  raw_data: data/raw
+  processed_data: data/processed
+  features: data/features
+  labels: data/labels
+  training_pairs: data/training_pairs
+  models: models/weights
+  outputs: outputs

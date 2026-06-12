@@ -1,0 +1,87 @@
+unet:
+  # Architecture
+  in_channels: 7        # VV, VH, VV/VH ratio, NDWI, MNDWI, HAND, slope
+  out_channels: 1       # binary flood mask
+  features: [64, 128, 256, 512]
+  dropout: 0.2
+
+  # Pretraining
+  pretrained_weights: sen1floods11  # download on first run
+  pretrained_source: https://zenodo.org/record/xxx  # placeholder
+
+  # Training
+  training:
+    epochs: 50
+    batch_size: 16
+    learning_rate: 1.0e-4
+    lr_scheduler: cosine_annealing
+    weight_decay: 1.0e-5
+    loss: bce_dice          # combined BCE + Dice loss
+    dice_weight: 0.5
+    bce_weight: 0.5
+    pos_weight: 3.0         # class imbalance — flooded pixels are rare
+    early_stopping_patience: 10
+    val_split: 0.15
+    test_split: 0.10
+
+  # Augmentation
+  augmentation:
+    horizontal_flip: true
+    vertical_flip: true
+    random_rotate_90: true
+    random_brightness_contrast: true
+    elastic_transform: false
+
+  # Inference
+  inference:
+    tile_size: 512
+    overlap: 64
+    batch_size: 8
+    confidence_threshold: 0.5
+
+vlm:
+  base_model: liquid/lfm2.5-vl-450m
+  task: flood_report_generation
+
+  # LoRA config
+  lora:
+    r: 16
+    alpha: 32
+    dropout: 0.05
+    target_modules: [q_proj, v_proj, k_proj, o_proj]
+    bias: none
+
+  # Training
+  training:
+    epochs: 10
+    batch_size: 4
+    gradient_accumulation_steps: 4  # effective batch = 16
+    learning_rate: 2.0e-4
+    lr_scheduler: cosine
+    warmup_steps: 100
+    max_seq_length: 1024
+    weight_decay: 0.01
+    fp16: true
+    early_stopping_patience: 5
+
+  # Quantization (for fine-tuning on constrained GPU)
+  quantization:
+    load_in_4bit: true
+    bnb_4bit_compute_dtype: float16
+    bnb_4bit_quant_type: nf4
+    bnb_4bit_use_double_quant: true
+
+  # Inference
+  inference:
+    max_new_tokens: 512
+    temperature: 0.1       # low temp for structured output
+    do_sample: false
+    repetition_penalty: 1.1
+
+  # Prompt template
+  system_prompt: |
+    You are a flood analysis expert system. You will be given a satellite image
+    composite of an area in Accra, Ghana, overlaid with a flood detection mask.
+    Analyze the image and generate a structured JSON flood assessment report
+    covering severity, affected areas, hydrological indicators, and response
+    recommendations. Always respond with valid JSON matching the report schema.

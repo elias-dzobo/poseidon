@@ -1,0 +1,45 @@
+# Dependencies
+node_modules/
+.pnp/
+.venv/
+venv/
+env/
+.expo/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ipynb_checkpoints/
+
+# Builds
+dist/
+build/
+.next/
+out/
+
+# Environment & secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Data & models
+*.db
+*.sqlite*
+*.safetensors
+*.gguf
+*.bin
+*.onnx
+*.pt
+*.pth
+*.pte
+*.arrow
+*.parquet
+
+# Logs & OS
+*.log
+.DS_Store
